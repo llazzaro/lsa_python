@@ -1,17 +1,10 @@
-
 ## What is this?
 
-A python LSA implementation
+This is a python implementation of LSA (Latent Semantic Analysis).
 
-http://en.wikipedia.org/wiki/Latent_semantic_analysis
+## How to install?
 
-## How to install ?
-
-git clone git@github.com:llazzaro/lsa_python.git
+pip install nltk
+pip install
 
 ## TODO
-
-* rearrange methods in some classes
-* no funcaring nada yet
-* in some places numpy is used and other libraries mixed :S
-

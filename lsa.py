@@ -1,7 +1,20 @@
-#!/usr/bin/python
+"""
+LSA(Latent Semantic Analisys) is a technique originally developed for solving
+the problems of synonymy and polysemy in information retrieval.
+LSA is based on the vector-space model, exploiting singular value 
+decomposition.
+This provides functions for calculate LSA
+
+
+LSA paper
+http://lsi.argreenhouse.com/lsi/papers/JASIS90.pdf
+
+Summarization (see pag19 for LSA)
+http://files.nothingisreal.com/publications/Tristan_Miller/miller03b.pdf
+"""
 import nltk
 import numpy
-from numpy import *
+#from numpy import * #TODO fix this import
 #from numpy.linalg import svd
 #from numpy.linalg.decomp import diagsvd
 #from numpy.linalg import norm
@@ -9,9 +22,86 @@ from nltk.corpus import stopwords
 from nltk.stem.wordnet import WordNetLemmatizer
 import scipy.io
 from scipy import linalg
-#https://github.com/josephwilk/semanticpy/blob/master/lsa/lsa.py
+
+class CoocurenceMatrix(numpy.matrix):
+    """This matrix knows the frequency of keyword in each document
+        rows = keywords
+        columns = documents
+                  doc_1  doc_2  doc_3 ... doc_m
+        keyword_1 
+        keyword_2
+        ...
+        keyword_n
+    """
+    __keyword_index = {}
+    @classmethod
+    def create(cls,documents):
+        """
+            @param documents list of documents with meaning
+
+            @return coocurrence matrix
+        """
+        num_cols = len(documents)
+        words = words_list(" ".join(documents))
+        num_rows = len(words)
+        #create the matrix
+        res = cls(numpy.zeros(shape=(num_rows, num_cols)))
+
+        #words must be unique in order this to work
+        for index,word in enumerate(words):
+            res[index] = keyword_frequency_list(documents, word)
+            res.__keyword_index[index] = word
+        
+        return res
+
+    def keyword_index(self,keyword):
+        """
+            @param keyword the keyword to ask index
+
+            @return The index of the row for the keyword.
+                    None if the keyword does not exist.
+        """
+        return self.__keyword_index[keyword]
+    
+    def keyword_row(self,keyword):
+        """
+            @param keyword to get the row
+
+            "return The row of the corresponding keyword with frecuencies in
+                    each document. None is returned if keyword does not exist
+        """
+        raise NotImplementedError
+
+    def __str__(self):
+        res = ""
+        rows, cols = self.shape
+        for row_index in range(0,rows):
+            res += "%s " % self.__keyword_index[row_index]
+            for col_index in range(0,cols):
+                res += " %s " % (self[row_index,col_index])
+            res += "\n"
+        return res
+
+    def load_matrix(self,filename):
+        """Loads a matrix from disk
+        """
+        dictionary = scipy.io.loadmat(filename) #this loads a dict
+        self = dictionary['m'] #@TODO fix this
+
+    def save_matrix(self, filename):
+        """Dumps matrix to disk
+        """
+        scipy.io.savemat(filename, {'m': self}) #this saves a dict
 
 def tokenize_and_lemmatize(document):
+    """Lemmatize is the process of grouping together the different
+    inflected forms of a word. Ex, better has good as its lemma.
+
+    @param document A discrete representation of meaning. string or
+                    bufer is allowed.
+
+    @return A list of not neccesary unique words withour lemmas
+    """
     res = []
     wnl = WordNetLemmatizer()
     for word in nltk.word_tokenize(document):
@@ -20,109 +110,82 @@ def tokenize_and_lemmatize(document):
 
     return res
 
-def words_vector(keywords):
-    #wnl = nltk.stem.WordNetLemmatizer()
-    #stopset = set(nltk.corpus.stopwords.words('english'))
-    #remove duplicates
+def words_list(keywords):
+    """Creates a list using lemmatize to avoid semantic duplicates
+
+    @param keywords 
+
+    @return a list of unique words, tokenized and without lemmas
+    """
     return list(set(tokenize_and_lemmatize(keywords)))
         
-def keyword_row(documents,keyword):
-    vector_row = [0] * len(documents)
-    index = 0
-    for document in documents:
-        freqs_doc = nltk.FreqDist(tokenize_and_lemmatize(document))  # TODO: optimize this
+def keyword_frequency_list(documents, keyword):
+    """Creates a row of keyword frequency for each document as columns
+
+    @param documents collection of documents with some meaning
+    @param keyword word for calculate frequency
+
+    @return A list with frequencies of the keyword in each document
+    """
+    freq_list = [0] * len(documents)
+    for index, document in enumerate(documents):
+        #freqs_doc = 
+        #nltk.FreqDist(tokenize_and_lemmatize(document))  # TODO: optimize this
         if keyword in tokenize_and_lemmatize(document):
-            vector_row[index] += 1#freqs_doc.freq(keyword)
-        index += 1
+            freq_list[index] += 1#freqs_doc.freq(keyword)
 
-    return vector_row
+    return freq_list
 
 
-def create_coocurrence_matrix(documents):
-    num_cols = len(documents)
-    words = tokenize_and_lemmatize(" ".join(documents))
-    num_rows = len(words)
-    matrix_res = numpy.zeros(shape=(num_rows,num_cols))
-    row_index = 0
-    for word in words:
-        matrix_res[row_index] = keyword_row(documents,word)
-        row_index += 1
-        
-    return matrix_res
+def matrix_reduce_sigma(matrix, dimensions=1):
+    """This calculates the SVD of the matrix, reduces it and 
+        creates a reduced matrix.
 
-def load_matrix(filename):
-    dictionary = scipy.io.loadmat(filename) #this loads a dict
-    return dictionary['m'] #@TODO fix this
+        @params matrix the matrix to reduce
+        @params dimensions dimensions to reduce. 
 
-def save_matrix(matrix,filename):
-    scipy.io.savemat(filename,{'m':matrix}) #this saves a dict
-
-def matrix_reduce_sigma(matrix,dimensions=1):
-    uu,sigma,vt = linalg.svd(matrix)
+        @return matrix The reduced matrix
+    """
+    uu, sigma, vt = linalg.svd(matrix)
     #reduce dimensions (param)
     rows = sigma.shape[0]
-    for index in xrange(rows-dimensions,rows):
+    for index in xrange(rows - dimensions, rows):
         sigma[index] = 0 
     
-    reduced_matrix =  dot(dot(uu,linalg.diagsvd(sigma,len(matrix),len(vt))),vt)
+    reduced_matrix =  numpy.dot(numpy.dot(uu, linalg.diagsvd(sigma, len(matrix), len(vt))), vt)
 
     return reduced_matrix
 
 
-def load_ycombinator_docs():
-    docs = []
-    for file in glob.glob('ycombinator_docs'):
-        f = open(fn,'r')
-        text = f.read()
-        f.close()
+def cos_vector(vector1, vector2):
+    """Calculates the Cosine metric to find semantically similar documents
+        cosine is calculated with this forumla:  
+         lets call vector1 A and vector2 B
+         since A*B = ||A||*||B|| * cos(a)
+         cos(a) = (A * B) / (||A|| * ||B||)
 
-        clean_text = nltk.clean_html(text)
-        docs.append(clean_text)
+    @param vector1 one of the vector used to calcule the cosine
+    @param vector2 the other vector needed to calculate the cosine
 
-    return docs
+    @return float the cosine of the two vectors
+    """
+    return float(numpy.dot(vector1, vector2) / (linalg.norm(vector1) * linalg.norm(vector2) ) )
 
-def cos_vector(vector1,vector2):
-    return float(dot(vector1,vector2) / linalg.norm(vector1) * linalg.norm(vector2) )
-
-def search(keywords,documents):
-    pass
-
-def search(keywords,documents):
+def search(keywords, documents):
+    """this calculate the LSA
+    """
     freq_matrix = create_coocurrence_matrix(documents)  #TODO : fix this
-    print 'Coocurrence'
-    print freq_matrix
-    print '-----------'
     print 'reduced'
-    reduced_matrix = matrix_reduce_sigma(freq_matrix,dimensions=1)
+    reduced_matrix = matrix_reduce_sigma(freq_matrix, dimensions=1)
     print reduced_matrix
     print '-----------'
     for keyword in keywords:
-        query_vector = keyword_row(documents,keyword)
+        query_vector = keyword_frequency_list(documents, keyword)
         print query_vector
-    ratings = [cos_vector(query_vector,word_row) for word_row in reduced_matrix ]
+    ratings = [cos_vector(query_vector, word_row) for word_row in reduced_matrix ]
     print ratings
 
 
-def test():
-    #test
-    #keywords =  'bitcoin startup hacks iphone android'
-    keywords = ['cat','white','dog','good']
-    documents = ["The cat in the hat disabled", "A cat is a fine pet ponies.",
-            "Dogs and cats make good pets.","I haven't got a hat."]
-
-    search(keywords,documents)
-    matrix=[[0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0], 
-            [0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 0.0], 
-            [1.0, 1.0, 0.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0], 
-            [0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]]
-
-    #
-    #ycombinator_documents = load_ycombinator_docs()
-    #create_matrix(keywords_vector,ycombinator_documents)
-
 def main():
-    test()
+    search()
 
-
-if __name__ == '__main__':
-    main()
