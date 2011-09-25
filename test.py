@@ -22,11 +22,15 @@ class TextCoocurrenceMatrix(unittest.TestCase):
                     ', a certain degree of care and thought should be'\
                     'exercised in choosing an animal, since the relationship'\
                     ' is often of such emotional significance to both animal '\
-                    'and human.'
+                    'and human.some cats...'
         documents = [document_a, document_b]
         matrix = CoocurenceMatrix.create(documents)
-        print matrix
-        self.assertTrue(False)
+        #no punctuations
+        self.assertTrue(',' not in matrix.keywords())
+        self.assertTrue('(' not in matrix.keywords())
+        self.assertTrue(')' not in matrix.keywords())
+        self.assertTrue(',' not in matrix.keywords())
+        self.assertEquals(len(matrix.keywords()),54)
 
 class TestLSA(unittest.TestCase):
     """Test for LSA functions
@@ -60,8 +64,8 @@ class TestLSA(unittest.TestCase):
     def test_search(self):
         pass
 
-#test borrwed from: 
-#https://github.com/josephwilk/semanticpy/blob/master/lsa/lsa.py
+    #test borrwed from: 
+    #https://github.com/josephwilk/semanticpy/blob/master/lsa/lsa.py
     def test_reduced(self):
         matrix = [[0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0], 
                 [0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 0.0], 
@@ -75,7 +79,6 @@ class TestLSA(unittest.TestCase):
         documents = ["The cat in the hat disabled", "A cat is a fine pet ponies.",
             "Dogs and cats make good pets.","I haven't got a hat."]
 
-        search(keywords,documents)
         matrix=[[0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0], 
                 [0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 0.0], 
                 [1.0, 1.0, 0.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0], 
