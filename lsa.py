@@ -61,8 +61,11 @@ class CoocurenceMatrix(numpy.matrix):
 
             @return The index of the row for the keyword.
                     None if the keyword does not exist.
+
+            @raise IndexError if keyword does not exists
         """
-        return self.__keyword_index[keyword]
+        return [key for key,value in self.__keyword_index.items() \
+                                                    if value == keyword ][0]
     
     def keyword_row(self,keyword):
         """
@@ -73,8 +76,8 @@ class CoocurenceMatrix(numpy.matrix):
 
             @raise IndexError if keyword does not exists
         """
-        return [key for key,value in self.__keyword_index.items() \
-                                                    if value == keyword ][0]
+        index = self.keyword_index(keyword)
+        return self[index]
 
     def keywords(self):
         """Returns the keywords associated in each row
@@ -113,7 +116,7 @@ def remove_punctuation(document):
         @return document string without punctuations
     """
     punctuation = re.compile(r'[-.,?!:;()|0-9]')
-    return punctuation.sub('',document)
+    return punctuation.sub(' ',document)
 
 def tokenize_and_lemmatize(document):
     """Lemmatize is the process of grouping together the different
@@ -122,7 +125,7 @@ def tokenize_and_lemmatize(document):
     @param document A discrete representation of meaning. string or
                     bufer is allowed.
 
-    @return A list of not neccesary unique words withour lemmas
+    @return A list of words not neccesary unique and without lemmas
     """
     res = []
     wnl = WordNetLemmatizer()
@@ -153,8 +156,10 @@ def keyword_frequency_list(documents, keyword):
     for index, document in enumerate(documents):
         #freqs_doc = 
         #nltk.FreqDist(tokenize_and_lemmatize(document))  # TODO: optimize this
-        if keyword in tokenize_and_lemmatize(document):
-            freq_list[index] += 1#freqs_doc.freq(keyword)
+
+        for word in tokenize_and_lemmatize(document):
+            if word == keyword:
+                freq_list[index] += 1#freqs_doc.freq(keyword)
 
     return freq_list
 

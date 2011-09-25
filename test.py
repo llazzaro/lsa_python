@@ -22,7 +22,7 @@ class TextCoocurrenceMatrix(unittest.TestCase):
                     ', a certain degree of care and thought should be'\
                     'exercised in choosing an animal, since the relationship'\
                     ' is often of such emotional significance to both animal '\
-                    'and human.some cats...'
+                    'and human.some cats...cat'
         documents = [document_a, document_b]
         matrix = CoocurenceMatrix.create(documents)
         #no punctuations
@@ -30,7 +30,8 @@ class TextCoocurrenceMatrix(unittest.TestCase):
         self.assertTrue('(' not in matrix.keywords())
         self.assertTrue(')' not in matrix.keywords())
         self.assertTrue(',' not in matrix.keywords())
-        self.assertEquals(len(matrix.keywords()),54)
+        self.assertEquals(len(matrix.keywords()),53)
+        self.assertEquals(matrix.keyword_row('cat')[0,0],2.0)
 
 class TestLSA(unittest.TestCase):
     """Test for LSA functions
