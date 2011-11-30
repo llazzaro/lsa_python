@@ -2,9 +2,12 @@
  Unit tests for lsa functions   
 """
 import unittest
+import nltk
+
 from lsa import tokenize_and_lemmatize
 from lsa import words_list
 from lsa import CoocurenceMatrix
+from lsa import search
 
 class TextCoocurrenceMatrix(unittest.TestCase):
 
@@ -63,7 +66,13 @@ class TestLSA(unittest.TestCase):
         pass
 
     def test_search(self):
-        pass
+        documents = \
+        ' '.join(list(nltk.corpus.gutenberg.words('shakespeare-caesar.txt')))[0:2000].split('.')
+#        document_b = ' '.join(list(nltk.corpus.gutenberg.words('shakespeare-hamlet.txt')))
+#        document_c = ' '.join(list(nltk.corpus.gutenberg.words('shakespeare-macbeth.txt')))
+
+        search([documents[-1]], documents)
+        self.assertTrue(False)
 
     #test borrwed from: 
     #https://github.com/josephwilk/semanticpy/blob/master/lsa/lsa.py

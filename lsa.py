@@ -35,6 +35,7 @@ class CoocurenceMatrix(numpy.matrix):
         keyword_n
     """
     __keyword_index = {}
+
     @classmethod
     def create(cls,documents):
         """
@@ -175,12 +176,19 @@ def matrix_reduce_sigma(matrix, dimensions=1):
     """
     uu, sigma, vt = linalg.svd(matrix)
     rows = sigma.shape[0]
+
+    #delete n-k smallest singular values 
+    #delete ie settings to zero
     for index in xrange(rows - dimensions, rows):
         sigma[index] = 0 
     
-    reduced_matrix =  numpy.dot(numpy.dot(uu, linalg.diagsvd(sigma, len(matrix), len(vt))), vt)
+    #since sigma is a unidimensional array
+    #convert it to a matrix 
+    sigma_matrix = linalg.diagsvd(sigma, len(uu), len(vt))
+    uu_sigma = numpy.dot(uu, sigma_matrix)
+    uu_sigma_vt = numpy.dot(uu_sigma, vt)
 
-    return reduced_matrix
+    return uu_sigma_vt
 
 
 def cos_vector(vector1, vector2):
@@ -195,18 +203,26 @@ def cos_vector(vector1, vector2):
 
     @return float the cosine of the two vectors
     """
-    return float(numpy.dot(vector1, vector2) / (linalg.norm(vector1) * linalg.norm(vector2) ) )
+    return float(numpy.dot(vector1, vector2) / \
+                (linalg.norm(vector1) * linalg.norm(vector2) ) )
 
-def search(keywords, documents):
-    """this calculate the LSA
+def search(document, documents):
+    """this calculates LSA. ex. keyword: drama and you give 
+        shakespeare dramas as documents, its expected to get high ratings
+
+        @param document string document to compare against the documents
+        @param documents list of documents to query against kewords
+
+        @return list of ratings (this should be an object instead of list?)
     """
     freq_matrix = CoocurenceMatrix.create(documents)  #TODO : fix this
     print 'reduced'
     reduced_matrix = matrix_reduce_sigma(freq_matrix, dimensions=1)
     print reduced_matrix
     print '-----------'
-    for keyword in keywords:
-        query_vector = keyword_frequency_list(documents, keyword)
-        print query_vector
+    query_vector = numpy.transpose(CoocurenceMatrix.create(document))
+    print 'query_vector'
+    print query_vector
+    print '-------'
     ratings = [cos_vector(query_vector, word_row) for word_row in reduced_matrix ]
     print ratings
