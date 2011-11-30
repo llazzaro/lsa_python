@@ -14,6 +14,7 @@ http://files.nothingisreal.com/publications/Tristan_Miller/miller03b.pdf
 """
 import re
 import nltk
+import math
 import numpy
 #from numpy import * #TODO fix this import
 #from numpy.linalg import svd
@@ -190,6 +191,12 @@ def matrix_reduce_sigma(matrix, dimensions=1):
 
     return uu_sigma_vt
 
+def scalar(vector1, vector2):
+    length = min(vector1.shape[0], vector2.shape[0])
+    res = 0
+    for i in range(0, length):
+        res = res + vector1[i]*vector2[i]
+    return res
 
 def cos_vector(vector1, vector2):
     """Calculates the Cosine metric to find semantically similar documents
@@ -203,8 +210,8 @@ def cos_vector(vector1, vector2):
 
     @return float the cosine of the two vectors
     """
-    return float(numpy.dot(vector1, vector2) / \
-                (linalg.norm(vector1) * linalg.norm(vector2) ) )
+    return math.acos(float(scalar(vector1, vector2) / \
+                (linalg.norm(vector1) * linalg.norm(vector2) ) ))
 
 def search(document, documents):
     """this calculates LSA. ex. keyword: drama and you give 
@@ -215,14 +222,22 @@ def search(document, documents):
 
         @return list of ratings (this should be an object instead of list?)
     """
+    print 'document'
+    print document
     freq_matrix = CoocurenceMatrix.create(documents)  #TODO : fix this
     print 'reduced'
     reduced_matrix = matrix_reduce_sigma(freq_matrix, dimensions=1)
     print reduced_matrix
     print '-----------'
-    query_vector = numpy.transpose(CoocurenceMatrix.create(document))
+    query_vector = CoocurenceMatrix.create(document)
     print 'query_vector'
     print query_vector
     print '-------'
+    print query_vector.shape
+
+    for word_row in reduced_matrix:
+        print word_row
+        print word_row.shape
+        break
     ratings = [cos_vector(query_vector, word_row) for word_row in reduced_matrix ]
     print ratings
