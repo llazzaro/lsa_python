@@ -177,10 +177,12 @@ def matrix_reduce_sigma(matrix, dimensions=1):
     """
     uu, sigma, vt = linalg.svd(matrix)
     rows = sigma.shape[0]
+    cols = sigma.shape[1]
 
     #delete n-k smallest singular values 
     #delete ie settings to zero
-    for index in xrange(rows - dimensions, rows):
+    smallerBound = min(rows, cols)
+    for index in xrange(smallerBound - dimensions, rows):
         sigma[index] = 0 
     
     #since sigma is a unidimensional array
