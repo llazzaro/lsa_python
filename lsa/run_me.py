@@ -3,7 +3,6 @@
 import sys
 from optparse import OptionParser
 
-from lsa import main
 
 if __name__ == '__main__':
     parser = OptionParser()
